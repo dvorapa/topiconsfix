@@ -20,7 +20,18 @@ function enable() {
     trayAddedId = trayManager.connect('tray-icon-added', onTrayIconAdded);
     trayRemovedId = trayManager.connect('tray-icon-removed', onTrayIconRemoved);
     trayManager.manage_stage(global.stage, Main.panel._rightBox);
+
     Main.notificationDaemon._getSource = createSource;
+
+    for (let i = 0; i < Main.notificationDaemon._sources.length; i++) {
+        let source = Main.notificationDaemon._sources[i];
+        if (!source.trayIcon)
+            continue;
+        let parent = source.trayIcon.get_parent();
+        parent.remove_actor(source.trayIcon);
+        onTrayIconAdded(this, source.trayIcon, source.initialTitle);
+        source.destroy();
+    }
 }
 
 function createSource (title, pid, ndata, sender, trayIcon) { 
