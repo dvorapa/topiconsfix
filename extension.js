@@ -2,6 +2,7 @@
 const Shell = imports.gi.Shell;
 const Main = imports.ui.main;
 const Lang = imports.lang;
+const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
 const NotificationDaemon = imports.ui.notificationDaemon;
 
@@ -23,6 +24,7 @@ function enable() {
 
     Main.notificationDaemon._getSource = createSource;
 
+    let toDestroy = [];
     for (let i = 0; i < Main.notificationDaemon._sources.length; i++) {
         let source = Main.notificationDaemon._sources[i];
         if (!source.trayIcon)
@@ -30,8 +32,12 @@ function enable() {
         let parent = source.trayIcon.get_parent();
         parent.remove_actor(source.trayIcon);
         onTrayIconAdded(this, source.trayIcon, source.initialTitle);
-        source.destroy();
+        toDestroy.push(source);
     }
+
+     for (let i = 0; i < toDestroy.length; i++) {
+        toDestroy[i].destroy();
+     }
 }
 
 function createSource (title, pid, ndata, sender, trayIcon) { 
@@ -48,7 +54,7 @@ function onTrayIconAdded(o, icon, role) {
     let box = buttonBox.actor;
     let parent = box.get_parent();
 
-    icon.height = 24;
+    icon.height = Panel.PANEL_ICON_SIZE;
     box.add_actor(icon);
 
     if (parent)
