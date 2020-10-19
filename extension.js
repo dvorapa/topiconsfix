@@ -4,6 +4,7 @@ const Clutter = imports.gi.Clutter;
 const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 const Main = imports.ui.main;
+const GLib = imports.gi.GLib;
 const Lang = imports.lang;
 const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
@@ -29,7 +30,7 @@ function init() {
 }
 
 function enable() {
-    moveToTop();
+    GLib.idle_add(GLib.PRIORITY_LOW, moveToTop);
 }
 
 function createSource (title, pid, ndata, sender, trayIcon) { 
@@ -62,8 +63,6 @@ function onTrayIconAdded(o, icon, role) {
     icons.push(icon);
     Main.panel._rightBox.insert_child_at_index(box, 0);
 
-    icon.window.unmap();
-
     let clickProxy = new St.Bin({ width: Panel.PANEL_ICON_SIZE, height: Panel.PANEL_ICON_SIZE });
     clickProxy.reactive = true;
     Main.uiGroup.add_actor(clickProxy);
@@ -88,7 +87,6 @@ function onTrayIconAdded(o, icon, role) {
 
     /* Fixme: HACK */
     Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
-        icon.window.map();
         let [x, y] = icon.get_transformed_position();
         clickProxy.set_position(x, y);
         return false;
