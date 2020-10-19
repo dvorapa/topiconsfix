@@ -6,7 +6,6 @@ const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
 const NotificationDaemon = imports.ui.notificationDaemon;
 
-let trayManager = null;
 let trayAddedId = 0;
 let trayRemovedId = 0;
 let getSource = null;
@@ -17,11 +16,11 @@ function init() {
 }
 
 function enable() {
-    trayManager = new Shell.TrayManager();
-    trayAddedId = trayManager.connect('tray-icon-added', onTrayIconAdded);
-    trayRemovedId = trayManager.connect('tray-icon-removed', onTrayIconRemoved);
-    trayManager.manage_stage(global.stage, Main.panel._rightBox);
-
+    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconAddedId);
+    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconRemovedId);
+    trayAddedId = Main.notificationDaemon._trayManager.connect('tray-icon-added', onTrayIconAdded);
+    trayRemovedId = Main.notificationDaemon._trayManager.connect('tray-icon-removed', onTrayIconRemoved);
+    
     Main.notificationDaemon._getSource = createSource;
 
     let toDestroy = [];
@@ -50,6 +49,10 @@ function createSource (title, pid, ndata, sender, trayIcon) {
 };
 
 function onTrayIconAdded(o, icon, role) {
+    let wmClass = icon.wm_class ? icon.wm_class.toLowerCase() : '';
+    if (NotificationDaemon.STANDARD_TRAY_ICON_IMPLEMENTATIONS[wmClass] !== undefined)
+            return;
+
     let buttonBox = new PanelMenu.ButtonBox();
     let box = buttonBox.actor;
     let parent = box.get_parent();
@@ -73,17 +76,21 @@ function onTrayIconRemoved(o, icon) {
 
 function disable() {
     if (trayAddedId != 0) {
-        trayManager.disconnect(trayAddedId);
+        Main.notificationDaemon._trayManager.disconnect(trayAddedId);
         trayAddedId = 0;
     }
 
     if (trayRemovedId != 0) {
-        trayManager.disconnect(trayRemovedId);
+        Main.notificationDaemon._trayManager.disconnect(trayRemovedId);
         trayRemovedId = 0;
     }
+    
+    Main.notificationDaemon._trayIconAddedId = Main.notificationDaemon._trayManager.connect('tray-icon-added',
+                                                Lang.bind(Main.notificationDaemon, Main.notificationDaemon._onTrayIconAdded));
+    Main.notificationDaemon._trayIconRemovedId = Main.notificationDaemon._trayManager.connect('tray-icon-removed', 
+                                                Lang.bind(Main.notificationDaemon, Main.notificationDaemon._onTrayIconRemoved));
 
     Main.notificationDaemon._getSource = getSource;
-    trayManager = null;
 
     for (let i = 0; i < icons.length; i++) {
         let icon = icons[i];
