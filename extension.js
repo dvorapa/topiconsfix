@@ -55,12 +55,15 @@ function onTrayIconAdded(o, icon, role) {
     icons.push(icon);
     Main.panel._rightBox.insert_child_at_index(box, 0);
 
-    icon.window.unmap();
-
     /* Fixme: HACK */
-    Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
-        icon.window.map();
-        return false;
+    let timerId = 0;
+    let i = 0;
+    timerId = Mainloop.timeout_add(500, function() {
+        icon.set_size(icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE,
+                      icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE);
+        i++;
+        if (i == 2)
+            Mainloop.source_remove(timerId);
     });
 }
 
