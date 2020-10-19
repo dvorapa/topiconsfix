@@ -3,10 +3,10 @@
   "description": "Shows legacy tray icons on top", 
   "name": "TopIcons", 
   "shell-version": [
-    "3.8", 
-    "3.7.92"
+    "3.10", 
+    "3.9.91"
   ], 
   "url": "", 
   "uuid": "topIcons@adel.gadllah@gmail.com", 
-  "version": 17
+  "version": 18
 }

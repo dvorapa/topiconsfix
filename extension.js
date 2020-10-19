@@ -2,6 +2,7 @@
 
 const Clutter = imports.gi.Clutter;
 const Shell = imports.gi.Shell;
+const St = imports.gi.St;
 const Main = imports.ui.main;
 const Lang = imports.lang;
 const Panel = imports.ui.panel;
@@ -40,14 +41,12 @@ function onTrayIconAdded(o, icon, role) {
     let buttonBox = new PanelMenu.ButtonBox();
     let box = buttonBox.actor;
     let parent = box.get_parent();
- 
+
+
     icon.set_size(Panel.PANEL_ICON_SIZE, Panel.PANEL_ICON_SIZE);
     box.add_actor(icon);
 
     icon.reactive = true;
-    icon._clicked = icon.connect('button-release-event', function(actor, event) {
-        icon.click(event);
-    });
 
     if (parent)
         parent.remove_actor(box);
@@ -55,15 +54,36 @@ function onTrayIconAdded(o, icon, role) {
     icons.push(icon);
     Main.panel._rightBox.insert_child_at_index(box, 0);
 
+    icon.window.unmap();
+
+    let clickProxy = new St.Bin({ width: Panel.PANEL_ICON_SIZE, height: Panel.PANEL_ICON_SIZE });
+    clickProxy.reactive = true;
+    Main.uiGroup.add_actor(clickProxy);
+
+    icon._proxyAlloc = Main.panel._rightBox.connect('allocation-changed', function() {
+        Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
+            let [x, y] = icon.get_transformed_position();
+            clickProxy.set_position(x, y);
+        });
+    });
+
+    icon.connect("destroy", function() {
+        Main.panel._rightBox.disconnect(icon._proxyAlloc);
+        clickProxy.destroy();
+    });
+
+    clickProxy.connect('button-release-event', function(actor, event) {
+        icon.click(event);
+    });
+
+    icon._clickProxy = clickProxy;
+
     /* Fixme: HACK */
-    let timerId = 0;
-    let i = 0;
-    timerId = Mainloop.timeout_add(500, function() {
-        icon.set_size(icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE,
-                      icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE);
-        i++;
-        if (i == 2)
-            Mainloop.source_remove(timerId);
+    Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
+        icon.window.map();
+        let [x, y] = icon.get_transformed_position();
+        clickProxy.set_position(x, y);
+        return false;
     });
 }
 
@@ -121,6 +141,8 @@ function moveToTray() {
         let parent = icon.get_parent();
         icon.disconnect(icon._clicked);
         icon._clicked = undefined;
+        Main.panel._rightBox.disconnect(icon._proxyAlloc);
+        icon._clickProxy.destroy();
         parent.remove_actor(icon);
         parent.destroy();
         Main.notificationDaemon._onTrayIconAdded(Main.notificationDaemon, icon);
