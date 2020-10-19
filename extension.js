@@ -148,9 +148,13 @@ function moveToTray() {
     for (let i = 0; i < icons.length; i++) {
         let icon = icons[i];
         let parent = icon.get_parent();
-        icon.disconnect(icon._clicked);
+        if (icon._clicked) {
+            icon.disconnect(icon._clicked);
+        }
         icon._clicked = undefined;
-        Main.panel._rightBox.disconnect(icon._proxyAlloc);
+        if (icon._proxyAlloc) {
+            Main.panel._rightBox.disconnect(icon._proxyAlloc);
+        }
         icon._clickProxy.destroy();
         parent.remove_actor(icon);
         parent.destroy();
