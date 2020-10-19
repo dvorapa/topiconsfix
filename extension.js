@@ -85,6 +85,15 @@ function onTrayIconAdded(o, icon, role) {
         clickProxy.set_position(x, y);
         return false;
     });
+    let timerId = 0;
+    let i = 0;
+    timerId = Mainloop.timeout_add(500, function() {
+        icon.set_size(icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE,
+                      icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE);
+        i++;
+        if (i == 2)
+            Mainloop.source_remove(timerId);
+    });
 }
 
 function onTrayIconRemoved(o, icon) {
