@@ -55,10 +55,11 @@ function onTrayIconAdded(o, icon, role) {
     icons.push(icon);
     Main.panel._rightBox.insert_child_at_index(box, 0);
 
+    icon.window.unmap();
+
     /* Fixme: HACK */
     Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
-        icon.hide();
-        icon.show();
+        icon.window.map();
         return false;
     });
 }
