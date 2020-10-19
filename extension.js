@@ -1,3 +1,4 @@
+// -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 
 const Shell = imports.gi.Shell;
 const Main = imports.ui.main;
@@ -8,6 +9,7 @@ const NotificationDaemon = imports.ui.notificationDaemon;
 
 let trayAddedId = 0;
 let trayRemovedId = 0;
+let fullScreenChangedId = 0;
 let getSource = null;
 let icons = [];
 
@@ -16,27 +18,18 @@ function init() {
 }
 
 function enable() {
-    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconAddedId);
-    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconRemovedId);
-    trayAddedId = Main.notificationDaemon._trayManager.connect('tray-icon-added', onTrayIconAdded);
-    trayRemovedId = Main.notificationDaemon._trayManager.connect('tray-icon-removed', onTrayIconRemoved);
-    
-    Main.notificationDaemon._getSource = createSource;
+    moveToTop();
 
-    let toDestroy = [];
-    for (let i = 0; i < Main.notificationDaemon._sources.length; i++) {
-        let source = Main.notificationDaemon._sources[i];
-        if (!source.trayIcon)
-            continue;
-        let parent = source.trayIcon.get_parent();
-        parent.remove_actor(source.trayIcon);
-        onTrayIconAdded(this, source.trayIcon, source.initialTitle);
-        toDestroy.push(source);
-    }
-
-     for (let i = 0; i < toDestroy.length; i++) {
-        toDestroy[i].destroy();
-     }
+    // TrayIcons do not survive leaving the stage (they end up as white squares), so work around this
+    // by temporarily move them back to the message tray while we are in fullscreen.
+    fullScreenChangedId = Main.layoutManager.connect('primary-fullscreen-changed', function (o, state) {
+            if (state) {
+                moveToTray();
+            }
+            else {
+                moveToTop();
+            }
+    });
 }
 
 function createSource (title, pid, ndata, sender, trayIcon) { 
@@ -74,7 +67,31 @@ function onTrayIconRemoved(o, icon) {
     icons.splice(icons.indexOf(icon), 1);
 }
 
-function disable() {
+function moveToTop() {
+    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconAddedId);
+    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconRemovedId);
+    trayAddedId = Main.notificationDaemon._trayManager.connect('tray-icon-added', onTrayIconAdded);
+    trayRemovedId = Main.notificationDaemon._trayManager.connect('tray-icon-removed', onTrayIconRemoved);
+    
+    Main.notificationDaemon._getSource = createSource;
+
+    let toDestroy = [];
+    for (let i = 0; i < Main.notificationDaemon._sources.length; i++) {
+        let source = Main.notificationDaemon._sources[i];
+        if (!source.trayIcon)
+            continue;
+        let parent = source.trayIcon.get_parent();
+        parent.remove_actor(source.trayIcon);
+        onTrayIconAdded(this, source.trayIcon, source.initialTitle);
+        toDestroy.push(source);
+    }
+
+     for (let i = 0; i < toDestroy.length; i++) {
+        toDestroy[i].destroy();
+     }
+}
+
+function moveToTray() {
     if (trayAddedId != 0) {
         Main.notificationDaemon._trayManager.disconnect(trayAddedId);
         trayAddedId = 0;
@@ -101,4 +118,13 @@ function disable() {
     }
     
     icons = [];
+}
+
+function disable() {
+    moveToTray();
+
+    if (fullScreenChangedId != 0) {
+        Main.layoutManager.disconnect(fullScreenChangedId);
+        fullScreenChangedId = 0;
+    }
 }
