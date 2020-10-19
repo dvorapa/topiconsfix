@@ -51,8 +51,10 @@ function onTrayIconAdded(o, icon, role) {
     let box = buttonBox.actor;
     let parent = box.get_parent();
 
+    let scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
+    let iconSize = Panel.PANEL_ICON_SIZE * scaleFactor;
 
-    icon.set_size(Panel.PANEL_ICON_SIZE, Panel.PANEL_ICON_SIZE);
+    icon.set_size(iconSize, iconSize);
     box.add_actor(icon);
 
     icon.reactive = true;
@@ -63,7 +65,7 @@ function onTrayIconAdded(o, icon, role) {
     icons.push(icon);
     Main.panel._rightBox.insert_child_at_index(box, 0);
 
-    let clickProxy = new St.Bin({ width: Panel.PANEL_ICON_SIZE, height: Panel.PANEL_ICON_SIZE });
+    let clickProxy = new St.Bin({ width: iconSize, height: iconSize });
     clickProxy.reactive = true;
     Main.uiGroup.add_actor(clickProxy);
 
@@ -94,8 +96,8 @@ function onTrayIconAdded(o, icon, role) {
     let timerId = 0;
     let i = 0;
     timerId = Mainloop.timeout_add(500, function() {
-        icon.set_size(icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE,
-                      icon.width == Panel.PANEL_ICON_SIZE ? Panel.PANEL_ICON_SIZE - 1 : Panel.PANEL_ICON_SIZE);
+        icon.set_size(icon.width == iconSize ? iconSize - 1 : iconSize,
+                      icon.width == iconSize ? iconSize - 1 : iconSize);
         i++;
         if (i == 2)
             Mainloop.source_remove(timerId);
