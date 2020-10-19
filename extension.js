@@ -15,9 +15,17 @@ let trayAddedId = 0;
 let trayRemovedId = 0;
 let getSource = null;
 let icons = [];
+let notificationDaemon;
 
 function init() {
-    getSource = Lang.bind(Main.notificationDaemon, NotificationDaemon.NotificationDaemon.prototype._getSource);
+    if (Main.notificationDaemon._fdoNotificationDaemon) {
+        notificationDaemon = Main.notificationDaemon._fdoNotificationDaemon;
+        getSource = Lang.bind(notificationDaemon, NotificationDaemon.FdoNotificationDaemon.prototype._getSource);
+    }
+    else {
+        notificationDaemon = Main.notificationDaemon;
+        getSource = Lang.bind(notificationDaemon, NotificationDaemon.NotificationDaemon.prototype._getSource);
+    }
 }
 
 function enable() {
@@ -104,16 +112,16 @@ function onTrayIconRemoved(o, icon) {
 }
 
 function moveToTop() {
-    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconAddedId);
-    Main.notificationDaemon._trayManager.disconnect(Main.notificationDaemon._trayIconRemovedId);
-    trayAddedId = Main.notificationDaemon._trayManager.connect('tray-icon-added', onTrayIconAdded);
-    trayRemovedId = Main.notificationDaemon._trayManager.connect('tray-icon-removed', onTrayIconRemoved);
+    notificationDaemon._trayManager.disconnect(notificationDaemon._trayIconAddedId);
+    notificationDaemon._trayManager.disconnect(notificationDaemon._trayIconRemovedId);
+    trayAddedId = notificationDaemon._trayManager.connect('tray-icon-added', onTrayIconAdded);
+    trayRemovedId = notificationDaemon._trayManager.connect('tray-icon-removed', onTrayIconRemoved);
     
-    Main.notificationDaemon._getSource = createSource;
+    notificationDaemon._getSource = createSource;
 
     let toDestroy = [];
-    for (let i = 0; i < Main.notificationDaemon._sources.length; i++) {
-        let source = Main.notificationDaemon._sources[i];
+    for (let i = 0; i < notificationDaemon._sources.length; i++) {
+        let source = notificationDaemon._sources[i];
         if (!source.trayIcon)
             continue;
         let parent = source.trayIcon.get_parent();
@@ -129,21 +137,21 @@ function moveToTop() {
 
 function moveToTray() {
     if (trayAddedId != 0) {
-        Main.notificationDaemon._trayManager.disconnect(trayAddedId);
+        notificationDaemon._trayManager.disconnect(trayAddedId);
         trayAddedId = 0;
     }
 
     if (trayRemovedId != 0) {
-        Main.notificationDaemon._trayManager.disconnect(trayRemovedId);
+        notificationDaemon._trayManager.disconnect(trayRemovedId);
         trayRemovedId = 0;
     }
     
-    Main.notificationDaemon._trayIconAddedId = Main.notificationDaemon._trayManager.connect('tray-icon-added',
-                                                Lang.bind(Main.notificationDaemon, Main.notificationDaemon._onTrayIconAdded));
-    Main.notificationDaemon._trayIconRemovedId = Main.notificationDaemon._trayManager.connect('tray-icon-removed', 
-                                                Lang.bind(Main.notificationDaemon, Main.notificationDaemon._onTrayIconRemoved));
+    notificationDaemon._trayIconAddedId = notificationDaemon._trayManager.connect('tray-icon-added',
+                                                Lang.bind(notificationDaemon, notificationDaemon._onTrayIconAdded));
+    notificationDaemon._trayIconRemovedId = notificationDaemon._trayManager.connect('tray-icon-removed',
+                                                Lang.bind(notificationDaemon, notificationDaemon._onTrayIconRemoved));
 
-    Main.notificationDaemon._getSource = getSource;
+    notificationDaemon._getSource = getSource;
 
     for (let i = 0; i < icons.length; i++) {
         let icon = icons[i];
@@ -158,7 +166,7 @@ function moveToTray() {
         icon._clickProxy.destroy();
         parent.remove_actor(icon);
         parent.destroy();
-        Main.notificationDaemon._onTrayIconAdded(Main.notificationDaemon, icon);
+        notificationDaemon._onTrayIconAdded(notificationDaemon, icon);
     }
     
     icons = [];
