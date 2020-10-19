@@ -18,6 +18,8 @@ let getSource = null;
 let icons = [];
 let notificationDaemon;
 
+const PANEL_ICON_SIZE = 24;
+
 function init() {
     if (Main.legacyTray) {
         notificationDaemon = Main.legacyTray;
@@ -56,7 +58,7 @@ function onTrayIconAdded(o, icon, role) {
     let parent = box.get_parent();
 
     let scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
-    let iconSize = Panel.PANEL_ICON_SIZE * scaleFactor;
+    let iconSize = PANEL_ICON_SIZE * scaleFactor;
 
     icon.set_size(iconSize, iconSize);
     box.add_actor(icon);
