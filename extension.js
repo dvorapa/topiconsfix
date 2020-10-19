@@ -6,6 +6,7 @@ const Main = imports.ui.main;
 const Lang = imports.lang;
 const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
+const Meta = imports.gi.Meta;
 const Mainloop = imports.mainloop;
 const NotificationDaemon = imports.ui.notificationDaemon;
 
@@ -39,8 +40,8 @@ function onTrayIconAdded(o, icon, role) {
     let buttonBox = new PanelMenu.ButtonBox();
     let box = buttonBox.actor;
     let parent = box.get_parent();
-
-    icon.height = Panel.PANEL_ICON_SIZE;
+ 
+    icon.set_size(Panel.PANEL_ICON_SIZE, Panel.PANEL_ICON_SIZE);
     box.add_actor(icon);
 
     icon.reactive = true;
@@ -54,9 +55,10 @@ function onTrayIconAdded(o, icon, role) {
     icons.push(icon);
     Main.panel._rightBox.insert_child_at_index(box, 0);
 
-    /* Fixme: HACK, some icons need some time to finish init */
-    Mainloop.timeout_add(500, function() {
-        icon.width = Panel.PANEL_ICON_SIZE;
+    /* Fixme: HACK */
+    Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
+        icon.hide();
+        icon.show();
         return false;
     });
 }
