@@ -125,9 +125,4 @@ function moveToTray() {
 
 function disable() {
     moveToTray();
-
-    if (fullScreenChangedId != 0) {
-        Main.layoutManager.disconnect(fullScreenChangedId);
-        fullScreenChangedId = 0;
-    }
 }
