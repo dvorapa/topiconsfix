@@ -4,9 +4,10 @@
   "name": "TopIcons", 
   "shell-version": [
     "3.6.1", 
-    "3.6.2"
+    "3.6.2", 
+    "3.6.3"
   ], 
   "url": "", 
   "uuid": "topIcons@adel.gadllah@gmail.com", 
-  "version": 6
+  "version": 7
 }
