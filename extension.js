@@ -11,12 +11,14 @@ const PanelMenu = imports.ui.panelMenu;
 const Meta = imports.gi.Meta;
 const Mainloop = imports.mainloop;
 const NotificationDaemon = imports.ui.notificationDaemon;
+const System = imports.system;
 
 let trayAddedId = 0;
 let trayRemovedId = 0;
 let getSource = null;
 let icons = [];
-let notificationDaemon;
+let notificationDaemon = null;
+let sysTray = null;
 
 const PANEL_ICON_SIZE = 24;
 
@@ -25,18 +27,29 @@ function init() {
         notificationDaemon = Main.legacyTray;
         NotificationDaemon.STANDARD_TRAY_ICON_IMPLEMENTATIONS = imports.ui.legacyTray.STANDARD_TRAY_ICON_IMPLEMENTATIONS;
     }
-    else if (Main.notificationDaemon._fdoNotificationDaemon) {
+    else if (Main.notificationDaemon._fdoNotificationDaemon &&
+             Main.notificationDaemon._fdoNotificationDaemon._trayManager) {
         notificationDaemon = Main.notificationDaemon._fdoNotificationDaemon;
         getSource = Lang.bind(notificationDaemon, NotificationDaemon.FdoNotificationDaemon.prototype._getSource);
     }
-    else {
+    else if (Main.notificationDaemon._trayManager) {
         notificationDaemon = Main.notificationDaemon;
         getSource = Lang.bind(notificationDaemon, NotificationDaemon.NotificationDaemon.prototype._getSource);
+    }
+    else {
+        NotificationDaemon.STANDARD_TRAY_ICON_IMPLEMENTATIONS = {
+            'bluetooth-applet': 1, 'gnome-sound-applet': 1, 'nm-applet': 1,
+            'gnome-power-manager': 1, 'keyboard': 1, 'a11y-keyboard': 1,
+            'kbd-scrolllock': 1, 'kbd-numlock': 1, 'kbd-capslock': 1, 'ibus-ui-gtk': 1
+        };
     }
 }
 
 function enable() {
-    GLib.idle_add(GLib.PRIORITY_LOW, moveToTop);
+    if (notificationDaemon)
+        GLib.idle_add(GLib.PRIORITY_LOW, moveToTop);
+    else
+        createTray();
 }
 
 function createSource (title, pid, ndata, sender, trayIcon) { 
@@ -117,6 +130,21 @@ function onTrayIconRemoved(o, icon) {
     icons.splice(icons.indexOf(icon), 1);
 }
 
+function createTray() {
+    sysTray = new Shell.TrayManager();
+    sysTray.connect('tray-icon-added', onTrayIconAdded);
+    sysTray.connect('tray-icon-removed', onTrayIconRemoved);
+    sysTray.manage_screen(global.screen, Main.panel.actor);
+}
+
+function destroyTray() {
+    icons.forEach(icon => { icon.get_parent().destroy(); });
+    icons = [];
+
+    sysTray = null;
+    System.gc(); // force finalizing tray to unmanage screen
+}
+
 function moveToTop() {
     notificationDaemon._trayManager.disconnect(notificationDaemon._trayIconAddedId);
     notificationDaemon._trayManager.disconnect(notificationDaemon._trayIconRemovedId);
@@ -190,5 +218,8 @@ function moveToTray() {
 }
 
 function disable() {
-    moveToTray();
+    if (notificationDaemon)
+        moveToTray();
+    else
+        destroyTray();
 }
