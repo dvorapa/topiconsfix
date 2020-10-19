@@ -116,7 +116,6 @@ function moveToTray() {
         icon.disconnect(icon._clicked);
         icon._clicked = undefined;
         parent.remove_actor(icon);
-        parent.queue_redraw();
         parent.destroy();
         Main.notificationDaemon._onTrayIconAdded(Main.notificationDaemon, icon);
     }
