@@ -66,8 +66,7 @@ function onTrayIconAdded(o, icon, role) {
     if (NotificationDaemon.STANDARD_TRAY_ICON_IMPLEMENTATIONS[wmClass] !== undefined)
         return;
 
-    let buttonBox = new PanelMenu.ButtonBox();
-    let box = buttonBox.actor;
+    let box = new PanelMenu.ButtonBox();
     let parent = box.get_parent();
 
     let scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
@@ -88,7 +87,7 @@ function onTrayIconAdded(o, icon, role) {
     clickProxy.reactive = true;
     Main.uiGroup.add_actor(clickProxy);
 
-    icon._proxyAlloc = Main.panel._rightBox.connect('allocation-changed', function() {
+    icon._proxyAlloc = Main.panel._rightBox.connect('notify::allocation', function() {
         Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
             let [x, y] = icon.get_transformed_position();
             clickProxy.set_position(x, y);
