@@ -133,11 +133,7 @@ function createTray() {
     sysTray = new Shell.TrayManager();
     sysTray.connect('tray-icon-added', onTrayIconAdded);
     sysTray.connect('tray-icon-removed', onTrayIconRemoved);
-    if (global.screen) {
-        sysTray.manage_screen(global.screen, Main.panel.actor);
-    } else {
-        sysTray.manage_screen(Main.panel.actor);
-    }
+    sysTray.manage_screen(Main.panel);
 }
 
 function destroyTray() {
