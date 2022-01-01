@@ -18,7 +18,7 @@ and enable the extension in it.
 
 ## Status
 
-`abandoned`
+`unmaintained`
 
 ## Author
 
