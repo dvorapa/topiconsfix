@@ -5,9 +5,10 @@
   "shell-version": [
     "3.38",
     "40",
-    "41"
+    "41",
+    "42"
   ],
   "url": "",
   "uuid": "topiconsfix@aleskva@devnullmail.com",
-  "version": 7
+  "version": 8
 }
