@@ -5,7 +5,6 @@ const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 const Main = imports.ui.main;
 const GLib = imports.gi.GLib;
-const Lang = imports.lang;
 const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
 const Meta = imports.gi.Meta;
@@ -19,6 +18,7 @@ let getSource = null;
 let icons = [];
 let notificationDaemon = null;
 let sysTray = null;
+let timerId = 0;
 
 const PANEL_ICON_SIZE = 24;
 
@@ -30,11 +30,11 @@ function init() {
     else if (Main.notificationDaemon._fdoNotificationDaemon &&
              Main.notificationDaemon._fdoNotificationDaemon._trayManager) {
         notificationDaemon = Main.notificationDaemon._fdoNotificationDaemon;
-        getSource = Lang.bind(notificationDaemon, NotificationDaemon.FdoNotificationDaemon.prototype._getSource);
+        getSource = NotificationDaemon.FdoNotificationDaemon.prototype._getSource.bind(notificationDaemon);
     }
     else if (Main.notificationDaemon._trayManager) {
         notificationDaemon = Main.notificationDaemon;
-        getSource = Lang.bind(notificationDaemon, NotificationDaemon.NotificationDaemon.prototype._getSource);
+        getSource = NotificationDaemon.NotificationDaemon.prototype._getSource.bind(notificationDaemon);
     }
     else {
         NotificationDaemon.STANDARD_TRAY_ICON_IMPLEMENTATIONS = {
@@ -59,7 +59,7 @@ function createSource (title, pid, ndata, sender, trayIcon) {
   }
 
   return getSource(title, pid, ndata, sender, trayIcon);
-};
+}
 
 function onTrayIconAdded(o, icon, role) {
     let wmClass = icon.wm_class ? icon.wm_class.toLowerCase() : '';
@@ -94,7 +94,7 @@ function onTrayIconAdded(o, icon, role) {
         });
     });
 
-    icon.connect("destroy", function() {
+    icon.connect('destroy', function() {
         Main.panel._rightBox.disconnect(icon._proxyAlloc);
         clickProxy.destroy();
     });
@@ -111,7 +111,6 @@ function onTrayIconAdded(o, icon, role) {
         clickProxy.set_position(x, y);
         return false;
     });
-    let timerId = 0;
     let i = 0;
     timerId = Mainloop.timeout_add(500, function() {
         icon.set_size(icon.width == iconSize ? iconSize - 1 : iconSize,
@@ -191,9 +190,9 @@ function moveToTray() {
     }
     
     notificationDaemon._trayIconAddedId = notificationDaemon._trayManager.connect('tray-icon-added',
-                                                Lang.bind(notificationDaemon, notificationDaemon._onTrayIconAdded));
+                                                notificationDaemon._onTrayIconAdded.bind(notificationDaemon));
     notificationDaemon._trayIconRemovedId = notificationDaemon._trayManager.connect('tray-icon-removed',
-                                                Lang.bind(notificationDaemon, notificationDaemon._onTrayIconRemoved));
+                                                notificationDaemon._onTrayIconRemoved.bind(notificationDaemon));
 
     notificationDaemon._getSource = getSource;
 
@@ -221,4 +220,9 @@ function disable() {
         moveToTray();
     else
         destroyTray();
+
+    if (timerId) {
+        GLib.Source.remove(timerId);
+        timerId = 0;
+    }
 }
