@@ -3,13 +3,10 @@
   "description": "Shows legacy tray icons on top – the fixed version of https://extensions.gnome.org/extension/495/topicons/",
   "name": "TopIconsFix",
   "shell-version": [
-    "3.38",
-    "40",
-    "41",
-    "42",
-    "43"
+    "43",
+    "44"
   ],
   "url": "",
   "uuid": "topiconsfix@aleskva@devnullmail.com",
-  "version": 9
+  "version": 10
 }

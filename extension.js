@@ -1,11 +1,9 @@
 // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 
-const Clutter = imports.gi.Clutter;
 const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 const Main = imports.ui.main;
 const GLib = imports.gi.GLib;
-const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
 const Meta = imports.gi.Meta;
 const Mainloop = imports.mainloop;
@@ -87,14 +85,22 @@ function onTrayIconAdded(o, icon, role) {
     clickProxy.reactive = true;
     Main.uiGroup.add_actor(clickProxy);
 
+    let later_add = ()=>{};
+    try { // Gnome 44 Meta.Laters change
+        later_add = Meta.later_add;
+    } catch (_) {
+        const laters = global.compositor.get_laters();
+        later_add = laters.add;
+    }
+
     icon._proxyAlloc = Main.panel._rightBox.connect('notify::allocation', function() {
-        Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
+        later_add(Meta.LaterType.BEFORE_REDRAW, function() {
             let [x, y] = icon.get_transformed_position();
             clickProxy.set_position(x, y);
         });
     });
 
-    icon.connect('destroy', function() {
+    icon.connect("destroy", function() {
         Main.panel._rightBox.disconnect(icon._proxyAlloc);
         clickProxy.destroy();
     });
@@ -106,7 +112,7 @@ function onTrayIconAdded(o, icon, role) {
     icon._clickProxy = clickProxy;
 
     /* Fixme: HACK */
-    Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
+    later_add(Meta.LaterType.BEFORE_REDRAW, function() {
         let [x, y] = icon.get_transformed_position();
         clickProxy.set_position(x, y);
         return false;
