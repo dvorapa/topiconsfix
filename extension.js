@@ -85,19 +85,20 @@ function onTrayIconAdded(o, icon, role) {
     clickProxy.reactive = true;
     Main.uiGroup.add_actor(clickProxy);
 
-    let later_add = ()=>{};
-    try { // Gnome 44 Meta.Laters change
-        later_add = Meta.later_add;
-    } catch (_) {
-        const laters = global.compositor.get_laters();
-        later_add = laters.add;
-    }
+    // Gnome 44 Meta.Laters change
+    const laters = global.compositor.get_laters();
 
     icon._proxyAlloc = Main.panel._rightBox.connect('notify::allocation', function() {
-        later_add(Meta.LaterType.BEFORE_REDRAW, function() {
-            let [x, y] = icon.get_transformed_position();
-            clickProxy.set_position(x, y);
-        });
+        if (laters)
+            laters.add(Meta.LaterType.BEFORE_REDRAW, function() {
+                let [x, y] = icon.get_transformed_position();
+                clickProxy.set_position(x, y);
+            });
+        else
+            Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
+                let [x, y] = icon.get_transformed_position();
+                clickProxy.set_position(x, y);
+            });
     });
 
     icon.connect("destroy", function() {
@@ -112,11 +113,18 @@ function onTrayIconAdded(o, icon, role) {
     icon._clickProxy = clickProxy;
 
     /* Fixme: HACK */
-    later_add(Meta.LaterType.BEFORE_REDRAW, function() {
-        let [x, y] = icon.get_transformed_position();
-        clickProxy.set_position(x, y);
-        return false;
-    });
+    if (laters)
+        laters.add(Meta.LaterType.BEFORE_REDRAW, function() {
+            let [x, y] = icon.get_transformed_position();
+            clickProxy.set_position(x, y);
+            return false;
+        });
+    else
+        Meta.later_add(Meta.LaterType.BEFORE_REDRAW, function() {
+            let [x, y] = icon.get_transformed_position();
+            clickProxy.set_position(x, y);
+            return false;
+        });
     let i = 0;
     timerId = Mainloop.timeout_add(500, function() {
         icon.set_size(icon.width == iconSize ? iconSize - 1 : iconSize,
