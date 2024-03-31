@@ -9,6 +9,7 @@ import Meta from 'gi://Meta';
 import * as NotificationDaemon from 'resource:///org/gnome/shell/ui/notificationDaemon.js';
 import System from 'system';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import Clutter from 'gi://Clutter';
 
 let trayAddedId = 0;
 let trayRemovedId = 0;
@@ -42,19 +43,32 @@ function onTrayIconAdded(o, icon, role) {
     let iconSize = PANEL_ICON_SIZE * scaleFactor;
 
     icon.set_size(iconSize, iconSize);
-    box.add_actor(icon);
+    if (Clutter.Container === undefined) {
+        box.add_child(icon);
+    } else {
+        box.add_actor(icon);
+    }
 
     icon.reactive = true;
 
-    if (parent)
-        parent.remove_actor(box);
+    if (parent) {
+        if (Clutter.Container === undefined) {
+            parent.remove_child(box);
+        } else {
+            parent.remove_actor(box);
+        }
+    }
 
     icons.push(icon);
     Main.panel._rightBox.insert_child_at_index(box, 0);
 
     let clickProxy = new St.Bin({ width: iconSize, height: iconSize });
     clickProxy.reactive = true;
-    Main.uiGroup.add_actor(clickProxy);
+    if (Clutter.Container === undefined) {
+        Main.uiGroup.add_child(clickProxy);
+    } else {
+        Main.uiGroup.add_actor(clickProxy);
+    }
 
     // Gnome 44 Meta.Laters change
     const laters = global.compositor.get_laters();
@@ -141,7 +155,11 @@ function moveToTop() {
             if (!source.trayIcon)
                 continue;
             let parent = source.trayIcon.get_parent();
-            parent.remove_actor(source.trayIcon);
+            if (Clutter.Container === undefined) {
+                parent.remove_child(source.trayIcon);
+            } else {
+                parent.remove_actor(source.trayIcon);
+            }
             onTrayIconAdded(this, source.trayIcon, source.initialTitle);
             toDestroy.push(source);
         }
@@ -149,7 +167,11 @@ function moveToTop() {
         for (let i = 0; i < notificationDaemon._iconBox.get_n_children(); i++) {
             let button = notificationDaemon._iconBox.get_child_at_index(i);
             let icon = button.child;
-            button.remove_actor(icon);
+            if (Clutter.Container === undefined) {
+                button.remove_child(icon);
+            } else {
+                button.remove_actor(icon);
+            }
             onTrayIconAdded(this, icon, '');
             toDestroy.push(button);
         }
@@ -183,7 +205,11 @@ function moveToTray() {
         icon._clicked = undefined;
         if (icon._proxyAlloc) Main.panel._rightBox.disconnect(icon._proxyAlloc);
         icon._clickProxy.destroy();
-        parent.remove_actor(icon);
+        if (Clutter.Container === undefined) {
+            parent.remove_child(icon);
+        } else {
+            parent.remove_actor(icon);
+        }
         parent.destroy();
         notificationDaemon._onTrayIconAdded(notificationDaemon, icon);
     }
